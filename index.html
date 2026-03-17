@@ -3,826 +3,352 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎮 Agent Colony - Multi-Agent Workspace</title>
+    <title>🎮 Agent Colony</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Mono:wght@400;700&display=swap');
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Space Mono', 'Courier New', monospace;
-            background: #0a0a12;
-            min-height: 100vh;
-            overflow: hidden;
-        }
-
-        /* Game Container */
-        .game-container {
-            width: 100vw;
-            height: 100vh;
-            position: relative;
-            overflow: hidden;
-        }
-
-        /* Animated Background */
-        .office-bg {
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, #0a0a12 0%, #1a1a2e 50%, #16213e 100%);
-        }
-
-        /* Animated Stars */
-        .stars {
-            position: absolute;
-            inset: 0;
-            overflow: hidden;
-        }
-
-        .star {
-            position: absolute;
-            width: 2px;
-            height: 2px;
-            background: white;
-            border-radius: 50%;
-            animation: twinkle var(--duration) ease-in-out infinite;
-        }
-
-        @keyframes twinkle {
-            0%, 100% { opacity: 0.2; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.5); }
-        }
-
-        /* Floating Particles */
-        .particles {
-            position: absolute;
-            inset: 0;
-            overflow: hidden;
-            pointer-events: none;
-        }
-
-        .particle {
-            position: absolute;
-            border-radius: 50%;
-            pointer-events: none;
-            animation: float-up var(--float-duration, 8s) ease-in-out infinite;
-            opacity: 0;
-        }
-
-        @keyframes float-up {
-            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
-            10% { opacity: 0.6; }
-            90% { opacity: 0.6; }
-            100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
-        }
-
-        /* Grid Overlay */
-        .grid-overlay {
-            position: absolute;
-            inset: 0;
-            background-image: 
-                linear-gradient(rgba(72, 219, 251, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(72, 219, 251, 0.03) 1px, transparent 1px);
-            background-size: 40px 40px;
-            pointer-events: none;
-            animation: grid-pulse 4s ease-in-out infinite;
-        }
-
-        @keyframes grid-pulse {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 1; }
-        }
-
-        /* Zones */
-        .zone {
-            position: absolute;
-            border-radius: 24px;
-            border: 2px solid;
-            display: flex;
-            flex-direction: column;
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-            backdrop-filter: blur(10px);
-            overflow: hidden;
-        }
-
-        .zone::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%);
-            pointer-events: none;
-        }
-
-        .zone:hover {
-            transform: scale(1.02) translateY(-5px);
-            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-        }
-
-        .zone-header {
-            padding: 18px 24px;
-            font-size: 0.85rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            position: relative;
-            background: rgba(0,0,0,0.2);
-        }
-
-        .zone-header::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 24px;
-            right: 24px;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, currentColor, transparent);
-            opacity: 0.3;
-        }
-
-        .zone-icon {
-            font-size: 1.2rem;
-            animation: icon-bounce 2s ease-in-out infinite;
-        }
-
-        @keyframes icon-bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-3px); }
-        }
-
-        .zone-content {
-            flex: 1;
-            padding: 20px;
-            display: flex;
-            flex-wrap: wrap;
-            align-content: flex-start;
-            gap: 20px;
-            min-height: 120px;
-        }
-
-        /* Work Zone */
-        .zone-work {
-            top: 5%;
-            left: 2%;
-            width: 45%;
-            height: 45%;
-            background: linear-gradient(135deg, rgba(231, 76, 60, 0.15) 0%, rgba(192, 57, 43, 0.1) 100%);
-            border-color: rgba(231, 76, 60, 0.4);
-            box-shadow: 0 8px 32px rgba(231, 76, 60, 0.15), inset 0 1px 0 rgba(255,255,255,0.1);
-        }
-        .zone-work .zone-header { color: #e74c3c; }
-        .zone-work::after {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #e74c3c, #c0392b, #e74c3c);
-            background-size: 200% 100%;
-            animation: gradient-flow 3s linear infinite;
-        }
-
-        /* Rest Zone */
-        .zone-rest {
-            top: 5%;
-            right: 2%;
-            width: 25%;
-            height: 30%;
-            background: linear-gradient(135deg, rgba(46, 204, 113, 0.15) 0%, rgba(39, 174, 96, 0.1) 100%);
-            border-color: rgba(46, 204, 113, 0.4);
-            box-shadow: 0 8px 32px rgba(46, 204, 113, 0.15), inset 0 1px 0 rgba(255,255,255,0.1);
-        }
-        .zone-rest .zone-header { color: #2ecc71; }
-        .zone-rest::after {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #2ecc71, #27ae60, #2ecc71);
-            background-size: 200% 100%;
-            animation: gradient-flow 3s linear infinite;
-        }
-
-        /* Meeting Zone */
-        .zone-meeting {
-            top: 52%;
-            left: 2%;
-            width: 30%;
-            height: 43%;
-            background: linear-gradient(135deg, rgba(155, 89, 182, 0.15) 0%, rgba(142, 68, 173, 0.1) 100%);
-            border-color: rgba(155, 89, 182, 0.4);
-            box-shadow: 0 8px 32px rgba(155, 89, 182, 0.15), inset 0 1px 0 rgba(255,255,255,0.1);
-        }
-        .zone-meeting .zone-header { color: #9b59b6; }
-        .zone-meeting::after {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #9b59b6, #8e44ad, #9b59b6);
-            background-size: 200% 100%;
-            animation: gradient-flow 3s linear infinite;
-        }
-
-        /* Error Zone */
-        .zone-error {
-            bottom: 5%;
-            right: 2%;
-            width: 20%;
-            height: 25%;
-            background: linear-gradient(135deg, rgba(241, 196, 15, 0.15) 0%, rgba(243, 156, 18, 0.1) 100%);
-            border-color: rgba(241, 196, 15, 0.4);
-            box-shadow: 0 8px 32px rgba(241, 196, 15, 0.15), inset 0 1px 0 rgba(255,255,255,0.1);
-        }
-        .zone-error .zone-header { color: #f1c40f; }
-        .zone-error::after {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #f1c40f, #f39c12, #f1c40f);
-            background-size: 200% 100%;
-            animation: gradient-flow 3s linear infinite;
-        }
-
-        /* Queue Zone */
-        .zone-queue {
-            top: 37%;
-            right: 2%;
-            width: 25%;
-            height: 28%;
-            background: linear-gradient(135deg, rgba(52, 152, 219, 0.15) 0%, rgba(41, 128, 185, 0.1) 100%);
-            border-color: rgba(52, 152, 219, 0.4);
-            box-shadow: 0 8px 32px rgba(52, 152, 219, 0.15), inset 0 1px 0 rgba(255,255,255,0.1);
-        }
-        .zone-queue .zone-header { color: #3498db; }
-        .zone-queue::after {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #3498db, #2980b9, #3498db);
-            background-size: 200% 100%;
-            animation: gradient-flow 3s linear infinite;
-        }
-
-        /* Orchestrator Zone */
-        .zone-orchestrator {
-            bottom: 5%;
-            left: 35%;
-            width: 28%;
-            height: 25%;
-            background: linear-gradient(135deg, rgba(255, 107, 107, 0.15) 0%, rgba(254, 202, 87, 0.1) 100%);
-            border-color: rgba(255, 107, 107, 0.4);
-            box-shadow: 0 8px 32px rgba(255, 107, 107, 0.15), inset 0 1px 0 rgba(255,255,255,0.1);
-        }
-        .zone-orchestrator .zone-header { color: #ff6b6b; }
-        .zone-orchestrator::after {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #ff6b6b, #feca57, #ff6b6b);
-            background-size: 200% 100%;
-            animation: gradient-flow 2s linear infinite;
-        }
-
-        @keyframes gradient-flow {
-            0% { background-position: 0% 50%; }
-            100% { background-position: 200% 50%; }
-        }
-
-        /* Agent Character */
-        .agent {
-            width: 90px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-            position: relative;
-        }
-
-        .agent:hover {
-            transform: scale(1.15) translateY(-8px);
-        }
-
-        .agent-sprite {
-            width: 56px;
-            height: 56px;
-            background: linear-gradient(135deg, var(--agent-color) 0%, var(--agent-color-dark, var(--agent-color)) 100%);
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.8rem;
-            position: relative;
-            box-shadow: 0 6px 0 rgba(0,0,0,0.3), 0 8px 20px rgba(0,0,0,0.2), inset 0 -4px 0 rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-        }
-
-        .agent-sprite::before {
-            content: '';
-            position: absolute;
-            inset: 3px;
-            border-radius: 11px;
-            background: linear-gradient(180deg, rgba(255,255,255,0.25) 0%, transparent 60%);
-        }
-
-        /* Working Animation */
-        .agent.working .agent-sprite {
-            animation: working-dance 0.6s ease-in-out infinite;
-        }
-
-        @keyframes working-dance {
-            0%, 100% { transform: translateY(0) rotate(0deg); }
-            25% { transform: translateY(-8px) rotate(-3deg); }
-            75% { transform: translateY(-8px) rotate(3deg); }
-        }
-
-        /* Thinking Animation */
-        .agent.thinking .agent-sprite::after {
-            content: '💭';
-            position: absolute;
-            top: -30px;
-            right: -20px;
-            font-size: 1.2rem;
-            animation: think-bubble 2s ease-in-out infinite;
-        }
-
-        @keyframes think-bubble {
-            0%, 100% { transform: translateY(0) scale(1); opacity: 1; }
-            50% { transform: translateY(-10px) scale(1.1); opacity: 0.7; }
-        }
-
-        /* Idle Animation */
-        .agent.idle .agent-sprite {
-            animation: idle-breathe 3s ease-in-out infinite;
-        }
-
-        @keyframes idle-breathe {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-
-        /* Error Animation */
-        .agent.error .agent-sprite {
-            animation: error-shake 0.5s ease-in-out infinite;
-        }
-
-        @keyframes error-shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
-        }
-
-        .agent-name {
-            margin-top: 10px;
-            font-size: 0.75rem;
-            color: #fff;
-            text-align: center;
-            max-width: 90px;
-            font-weight: 600;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-        }
-
-        .agent-status {
-            margin-top: 6px;
-            font-size: 0.65rem;
-            padding: 4px 10px;
-            border-radius: 12px;
-            text-transform: uppercase;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            transition: all 0.3s ease;
-        }
-
-        .agent-status.idle { background: rgba(150,150,150,0.2); color: #888; }
-        .agent-status.writing { background: rgba(231, 76, 60, 0.25); color: #e74c3c; animation: status-pulse 1.5s ease-in-out infinite; }
-        .agent-status.researching { background: rgba(52, 152, 219, 0.25); color: #3498db; animation: status-pulse 1.5s ease-in-out infinite; }
-        .agent-status.executing { background: rgba(241, 196, 15, 0.25); color: #f1c40f; animation: status-pulse 1s ease-in-out infinite; }
-        .agent-status.syncing { background: rgba(155, 89, 182, 0.25); color: #9b59b6; animation: status-pulse 1.5s ease-in-out infinite; }
-        .agent-status.error { background: rgba(192, 57, 43, 0.25); color: #c0392b; animation: status-pulse 0.5s ease-in-out infinite; }
-
-        @keyframes status-pulse {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.05); opacity: 0.8; }
-        }
-
-        /* Status Light */
-        .agent-light {
-            position: absolute;
-            top: -6px;
-            right: -6px;
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            background: var(--agent-color);
-            border: 3px solid #0a0a12;
-            transition: all 0.3s ease;
-        }
-
-        .agent-light.active {
-            animation: light-glow 1.5s ease-in-out infinite;
-        }
-
-        @keyframes light-glow {
-            0%, 100% { box-shadow: 0 0 0 0 var(--agent-color); }
-            50% { box-shadow: 0 0 10px 3px var(--agent-color), 0 0 20px 6px var(--agent-color); }
-        }
-
-        /* Task Card */
-        .task-card {
-            background: rgba(255,255,255,0.08);
-            border-radius: 12px;
-            padding: 14px 16px;
-            margin-bottom: 10px;
-            border-left: 4px solid var(--task-color, #3498db);
-            font-size: 0.8rem;
-            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-            backdrop-filter: blur(5px);
-        }
-
-        .task-card:hover {
-            background: rgba(255,255,255,0.12);
-            transform: translateX(8px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-
-        .task-card .title { color: #fff; margin-bottom: 6px; font-weight: 600; }
-        .task-card .meta { color: #888; font-size: 0.7rem; }
-
-        /* HUD */
-        .hud {
-            position: fixed;
-            top: 0; left: 0; right: 0;
-            padding: 18px 30px;
-            background: linear-gradient(180deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 70%, transparent 100%);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 100;
-            backdrop-filter: blur(10px);
-        }
-
-        .hud-title {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .hud-title h1 {
-            font-family: 'Press Start 2P', monospace;
-            font-size: 1rem;
-            color: #fff;
-            text-shadow: 0 0 10px rgba(72, 219, 251, 0.8), 0 0 20px rgba(72, 219, 251, 0.5);
-            animation: title-glow 3s ease-in-out infinite;
-        }
-
-        @keyframes title-glow {
-            0%, 100% { text-shadow: 0 0 10px rgba(72, 219, 251, 0.8), 0 0 20px rgba(72, 219, 251, 0.5); }
-            50% { text-shadow: 0 0 15px rgba(72, 219, 251, 1), 0 0 30px rgba(72, 219, 251, 0.7); }
-        }
-
-        .hud-stats { display: flex; gap: 40px; }
-
-        .hud-stat {
-            text-align: center;
-            transition: transform 0.3s ease;
-        }
-
-        .hud-stat:hover { transform: scale(1.1); }
-
-        .hud-stat .value {
-            font-size: 1.8rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #48dbfb 0%, #0abde3 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .hud-stat .label {
-            font-size: 0.6rem;
-            color: #888;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-top: 4px;
-        }
-
-        .hud-live {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px 20px;
-            background: linear-gradient(135deg, rgba(0, 255, 136, 0.15) 0%, rgba(0, 200, 100, 0.1) 100%);
-            border-radius: 25px;
-            border: 1px solid rgba(0, 255, 136, 0.3);
-        }
-
-        .hud-live .dot {
-            width: 10px;
-            height: 10px;
-            background: #00ff88;
-            border-radius: 50%;
-            animation: live-pulse 1.5s ease-in-out infinite;
-            box-shadow: 0 0 10px #00ff88;
-        }
-
-        @keyframes live-pulse {
-            0%, 100% { transform: scale(1); box-shadow: 0 0 10px #00ff88; }
-            50% { transform: scale(1.3); box-shadow: 0 0 20px #00ff88, 0 0 30px #00ff88; }
-        }
-
-        .hud-live span { color: #00ff88; font-weight: 600; font-size: 0.8rem; }
-
-        /* Tooltip */
-        .tooltip {
-            position: fixed;
-            background: rgba(10, 10, 18, 0.95);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 12px;
-            padding: 16px 20px;
-            font-size: 0.85rem;
-            max-width: 280px;
-            z-index: 1000;
-            pointer-events: none;
-            opacity: 0;
-            transform: translateY(10px);
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            backdrop-filter: blur(20px);
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-        }
-
-        .tooltip.visible { opacity: 1; transform: translateY(0); }
-        .tooltip .title { color: #fff; font-weight: 700; margin-bottom: 10px; font-size: 1rem; }
-        .tooltip .detail { color: #aaa; font-size: 0.75rem; line-height: 1.6; }
-        .tooltip .detail strong { color: #48dbfb; }
-
-        /* Activity Log */
-        .activity-log {
-            position: fixed;
-            bottom: 25px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(10, 10, 18, 0.9);
-            border-radius: 15px;
-            padding: 12px 24px;
-            display: flex;
-            gap: 25px;
-            z-index: 100;
-            max-width: 85%;
-            overflow-x: auto;
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-        }
-
-        .log-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 0.8rem;
-            color: #888;
-            white-space: nowrap;
-            animation: log-fade-in 0.5s ease-out;
-        }
-
-        @keyframes log-fade-in {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .log-item .time { color: #48dbfb; font-weight: 600; }
-        .log-item .agent-emoji { font-size: 1.1rem; }
-
-        /* Empty State */
-        .empty-zone {
-            color: rgba(255,255,255,0.25);
-            font-size: 0.85rem;
-            text-align: center;
-            padding: 30px;
-            width: 100%;
-            font-style: italic;
-        }
-
-        /* Responsive */
-        @media (max-width: 1200px) {
-            .zone { transform: scale(0.9); transform-origin: top left; }
-            .zone-rest, .zone-queue, .zone-error { transform-origin: top right; }
-            .zone-orchestrator { transform-origin: bottom center; }
-        }
-
-        @media (max-width: 900px) {
-            .zone { transform: scale(0.75); }
-            .hud-stats { gap: 20px; }
-            .hud-title h1 { font-size: 0.8rem; }
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: monospace; background: #0a0a12; overflow: hidden; }
+        .gc { width: 100vw; height: 100vh; position: relative; }
+        .bg { position: absolute; inset: 0; background: linear-gradient(135deg, #0a0a12, #1a1a2e, #16213e); }
+        .stars { position: absolute; inset: 0; overflow: hidden; }
+        .star { position: absolute; width: 2px; height: 2px; background: #fff; border-radius: 50%; animation: t var(--d) infinite; }
+        @keyframes t { 0%, 100% { opacity: .2; } 50% { opacity: 1; } }
+        .parts { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+        .part { position: absolute; border-radius: 50%; animation: f var(--d) infinite; opacity: 0; }
+        @keyframes f { 0% { transform: translateY(100vh); } 10%, 90% { opacity: .6; } 100% { transform: translateY(-100px); } }
+        .grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(72,219,251,.03) 1px, transparent 1px), linear-gradient(90deg, rgba(72,219,251,.03) 1px, transparent 1px); background-size: 40px 40px; }
+        
+        .zone { position: absolute; border-radius: 24px; border: 2px solid; backdrop-filter: blur(10px); }
+        .zh { padding: 18px 24px; font-size: .85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 3px; background: rgba(0,0,0,.2); border-radius: 24px 24px 0 0; }
+        .zc { flex: 1; min-height: 120px; }
+        .zw { top: 5%; left: 2%; width: 45%; height: 45%; background: linear-gradient(135deg, rgba(231,76,60,.15), rgba(192,57,43,.1)); border-color: rgba(231,76,60,.4); }
+        .zw .zh { color: #e74c3c; }
+        .zr { top: 5%; right: 2%; width: 25%; height: 30%; background: linear-gradient(135deg, rgba(46,204,113,.15), rgba(39,174,96,.1)); border-color: rgba(46,204,113,.4); }
+        .zr .zh { color: #2ecc71; }
+        .zm { top: 52%; left: 2%; width: 30%; height: 43%; background: linear-gradient(135deg, rgba(155,89,182,.15), rgba(142,68,173,.1)); border-color: rgba(155,89,182,.4); }
+        .zm .zh { color: #9b59b6; }
+        .ze { bottom: 5%; right: 2%; width: 20%; height: 25%; background: linear-gradient(135deg, rgba(241,196,15,.15), rgba(243,156,18,.1)); border-color: rgba(241,196,15,.4); }
+        .ze .zh { color: #f1c40f; }
+        .zq { top: 37%; right: 2%; width: 25%; height: 28%; background: linear-gradient(135deg, rgba(52,152,219,.15), rgba(41,128,185,.1)); border-color: rgba(52,152,219,.4); }
+        .zq .zh { color: #3498db; }
+        .zo { bottom: 5%; left: 35%; width: 28%; height: 25%; background: linear-gradient(135deg, rgba(255,107,107,.15), rgba(254,202,87,.1)); border-color: rgba(255,107,107,.4); }
+        .zo .zh { color: #ff6b6b; }
+        
+        .wl { position: absolute; inset: 0; pointer-events: none; z-index: 50; }
+        .ag { position: absolute; width: 80px; display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: left 1.2s ease, top 1.2s ease; pointer-events: auto; }
+        .ag:hover { transform: scale(1.2); z-index: 100; }
+        .ag canvas { width: 48px; height: 48px; image-rendering: pixelated; }
+        .an { margin-top: 6px; font-size: .65rem; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.8); }
+        .as { margin-top: 4px; font-size: .55rem; padding: 3px 8px; border-radius: 10px; text-transform: uppercase; }
+        .as.idle { background: rgba(150,150,150,.2); color: #888; }
+        .as.writing { background: rgba(231,76,60,.25); color: #e74c3c; }
+        .as.researching { background: rgba(52,152,219,.25); color: #3498db; }
+        .as.executing { background: rgba(241,196,15,.25); color: #f1c40f; }
+        .as.syncing { background: rgba(155,89,182,.25); color: #9b59b6; }
+        .as.error { background: rgba(192,57,43,.25); color: #c0392b; }
+        
+        .hud { position: fixed; top: 0; left: 0; right: 0; padding: 18px 30px; background: linear-gradient(180deg, rgba(0,0,0,.9), transparent); display: flex; justify-content: space-between; align-items: center; z-index: 100; }
+        .hud h1 { font-family: "Press Start 2P", monospace; font-size: .9rem; color: #fff; text-shadow: 0 0 10px rgba(72,219,251,.8); }
+        .hs { display: flex; gap: 40px; }
+        .hst { text-align: center; }
+        .hst .v { font-size: 1.6rem; font-weight: 700; color: #48dbfb; }
+        .hst .l { font-size: .55rem; color: #888; text-transform: uppercase; }
+        .hl { display: flex; align-items: center; gap: 10px; padding: 8px 18px; background: rgba(0,255,136,.15); border-radius: 25px; }
+        .hl .d { width: 8px; height: 8px; background: #00ff88; border-radius: 50%; animation: p 1.5s infinite; }
+        .hl .d.err { background: #e74c3c; }
+        @keyframes p { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.3); } }
+        
+        .log { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(10,10,18,.9); border-radius: 12px; padding: 10px 20px; display: flex; gap: 20px; z-index: 100; }
+        .li { display: flex; align-items: center; gap: 8px; font-size: .7rem; color: #888; }
+        .li .tm { color: #48dbfb; }
+        
+        .tip { position: fixed; background: rgba(10,10,18,.95); border-radius: 12px; padding: 14px 18px; max-width: 260px; z-index: 1000; pointer-events: none; opacity: 0; transition: opacity .3s; }
+        .tip.v { opacity: 1; }
+        .tip .tt { color: #fff; font-weight: 700; margin-bottom: 8px; }
+        .tip .td { color: #aaa; font-size: .7rem; line-height: 1.5; }
     </style>
 </head>
 <body>
-    <div class="game-container">
-        <div class="office-bg"></div>
+    <div class="gc">
+        <div class="bg"></div>
         <div class="stars" id="stars"></div>
-        <div class="particles" id="particles"></div>
-        <div class="grid-overlay"></div>
-
-        <!-- Zones -->
-        <div class="zone zone-work">
-            <div class="zone-header"><span class="zone-icon">💼</span>WORK AREA</div>
-            <div class="zone-content" id="work-content">
-                <div class="empty-zone">Agents working on tasks...</div>
-            </div>
-        </div>
-
-        <div class="zone zone-rest">
-            <div class="zone-header"><span class="zone-icon">☕</span>REST AREA</div>
-            <div class="zone-content" id="rest-content">
-                <div class="empty-zone">Idle agents resting...</div>
-            </div>
-        </div>
-
-        <div class="zone zone-meeting">
-            <div class="zone-header"><span class="zone-icon">👥</span>COLLABORATION</div>
-            <div class="zone-content" id="meeting-content">
-                <div class="empty-zone">Agents collaborating...</div>
-            </div>
-        </div>
-
-        <div class="zone zone-error">
-            <div class="zone-header"><span class="zone-icon">🐛</span>DEBUG ZONE</div>
-            <div class="zone-content" id="error-content">
-                <div class="empty-zone">No errors!</div>
-            </div>
-        </div>
-
-        <div class="zone zone-queue">
-            <div class="zone-header"><span class="zone-icon">📋</span>TASK QUEUE</div>
-            <div class="zone-content" id="queue-content">
-                <div class="empty-zone">No pending tasks</div>
-            </div>
-        </div>
-
-        <div class="zone zone-orchestrator">
-            <div class="zone-header"><span class="zone-icon">🎮</span>ORCHESTRATOR</div>
-            <div class="zone-content" id="orchestrator-content">
-                <div class="empty-zone">Orchestrator offline</div>
-            </div>
-        </div>
-
-        <!-- HUD -->
+        <div class="parts" id="parts"></div>
+        <div class="grid"></div>
+        <div class="wl" id="layer"></div>
+        
+        <div class="zone zw"><div class="zh">💼 WORK AREA</div><div class="zc"></div></div>
+        <div class="zone zr"><div class="zh">☕ REST AREA</div><div class="zc"></div></div>
+        <div class="zone zm"><div class="zh">👥 COLLABORATION</div><div class="zc"></div></div>
+        <div class="zone ze"><div class="zh">🐛 DEBUG ZONE</div><div class="zc"></div></div>
+        <div class="zone zq"><div class="zh">📋 TASK QUEUE</div><div class="zc"></div></div>
+        <div class="zone zo"><div class="zh">🎮 ORCHESTRATOR</div><div class="zc"></div></div>
+        
         <div class="hud">
-            <div class="hud-title">
-                <span style="font-size: 1.8rem;">🎮</span>
-                <h1>AGENT COLONY</h1>
+            <div><span style="font-size:1.5rem">🎮</span><h1>AGENT COLONY</h1></div>
+            <div class="hs">
+                <div class="hst"><div class="v" id="sa">0</div><div class="l">Active</div></div>
+                <div class="hst"><div class="v" id="si">0</div><div class="l">Idle</div></div>
+                <div class="hst"><div class="v" id="st">0</div><div class="l">Tasks</div></div>
+                <div class="hst"><div class="v" id="sd">0</div><div class="l">Done</div></div>
             </div>
-            <div class="hud-stats">
-                <div class="hud-stat"><div class="value" id="stat-active">0</div><div class="label">Active</div></div>
-                <div class="hud-stat"><div class="value" id="stat-idle">0</div><div class="label">Idle</div></div>
-                <div class="hud-stat"><div class="value" id="stat-tasks">0</div><div class="label">Tasks</div></div>
-                <div class="hud-stat"><div class="value" id="stat-completed">0</div><div class="label">Done</div></div>
-            </div>
-            <div class="hud-live">
-                <div class="dot"></div>
-                <span id="last-update">LIVE</span>
-            </div>
+            <div class="hl"><div class="d" id="ld"></div><span id="ts">LIVE</span></div>
         </div>
-
-        <div class="activity-log" id="activity-log"></div>
-        <div class="tooltip" id="tooltip"><div class="title"></div><div class="detail"></div></div>
+        
+        <div class="log" id="log"></div>
+        <div class="tip" id="tip"><div class="tt"></div><div class="td"></div></div>
     </div>
-
+    
     <script>
-        const CONFIG = {
-            starOfficeUrl: 'http://89.21.85.164:19000',
-            refreshInterval: 3000,
+        var CFG = {
+            url: 'http://89.21.85.164:19000',
             agents: {
-                'Clawtron': { emoji: '🍄', color: '#ff6b6b', colorDark: '#c0392b', role: 'Orchestrator', type: 'orchestrator' },
-                'Flashclaw': { emoji: '⚡', color: '#feca57', colorDark: '#f39c12', role: 'Server Agent', type: 'worker' },
-                'Coding Agent': { emoji: '💻', color: '#48dbfb', colorDark: '#0abde3', role: 'Developer', type: 'worker' },
-                'DevOps Agent': { emoji: '🔧', color: '#9b59b6', colorDark: '#8e44ad', role: 'Infrastructure', type: 'worker' },
-                'Tester Agent': { emoji: '🧪', color: '#00ff88', colorDark: '#00cc6a', role: 'QA', type: 'worker' }
+                'Clawtron': { c: '#ff6b6b', r: 'Orchestrator', t: 'orch', sk: '#ffd5b5', hr: '#ff6b6b', sh: '#c0392b', pn: '#2c3e50' },
+                'Flashclaw': { c: '#feca57', r: 'Server Agent', t: 'worker', sk: '#e8beac', hr: '#feca57', sh: '#3498db', pn: '#2c3e50' },
+                'Coding Agent': { c: '#48dbfb', r: 'Developer', t: 'worker', sk: '#ffd5b5', hr: '#8b4513', sh: '#48dbfb', pn: '#34495e' },
+                'DevOps Agent': { c: '#9b59b6', r: 'Infrastructure', t: 'worker', sk: '#d4a574', hr: '#c0392b', sh: '#9b59b6', pn: '#1a1a2e' },
+                'Tester Agent': { c: '#00ff88', r: 'QA', t: 'worker', sk: '#ffd5b5', hr: '#1a1a2e', sh: '#27ae60', pn: '#2c3e50' }
             }
         };
-
-        const state = { agents: [], tasks: [], completedTasks: 0 };
-        const zoneMapping = { 'idle': 'rest', 'writing': 'work', 'researching': 'work', 'executing': 'work', 'syncing': 'work', 'error': 'error' };
-
-        function createStars() {
-            const container = document.getElementById('stars');
-            for (let i = 0; i < 100; i++) {
-                const star = document.createElement('div');
-                star.className = 'star';
-                star.style.cssText = `left:${Math.random()*100}%;top:${Math.random()*100}%;--duration:${2+Math.random()*3}s;animation-delay:${Math.random()*2}s`;
-                container.appendChild(star);
+        
+        var ZP = { work: {x:10,y:18}, rest: {x:78,y:18}, meeting: {x:10,y:65}, error: {x:78,y:72}, orch: {x:48,y:72} };
+        var ZM = { idle: 'rest', writing: 'work', researching: 'work', executing: 'work', syncing: 'work', error: 'error' };
+        var S = { agents: [], pos: {} };
+        
+        function mkBg() {
+            var i, s, p, c = ['#ff6b6b','#feca57','#48dbfb','#9b59b6','#00ff88'];
+            for (i = 0; i < 80; i++) {
+                s = document.createElement('div');
+                s.className = 'star';
+                s.style.cssText = 'left:' + (Math.random()*100) + '%;top:' + (Math.random()*100) + '%;--d:' + (2+Math.random()*3) + 's';
+                document.getElementById('stars').appendChild(s);
+            }
+            for (i = 0; i < 20; i++) {
+                p = document.createElement('div');
+                p.className = 'part';
+                p.style.cssText = 'left:' + (Math.random()*100) + '%;width:' + (3+Math.random()*5) + 'px;height:' + (3+Math.random()*5) + 'px;background:' + c[Math.floor(Math.random()*c.length)] + ';--d:' + (8+Math.random()*12) + 's';
+                document.getElementById('parts').appendChild(p);
             }
         }
-
-        function createParticles() {
-            const container = document.getElementById('particles');
-            const colors = ['#ff6b6b', '#feca57', '#48dbfb', '#9b59b6', '#00ff88'];
-            for (let i = 0; i < 30; i++) {
-                const p = document.createElement('div');
-                p.className = 'particle';
-                const size = 3 + Math.random() * 6;
-                p.style.cssText = `left:${Math.random()*100}%;width:${size}px;height:${size}px;background:${colors[Math.floor(Math.random()*colors.length)]};--float-duration:${8+Math.random()*12}s;animation-delay:${Math.random()*10}s`;
-                container.appendChild(p);
-            }
+        
+        function PixelChar(g) {
+            this.g = g;
+            this.draw = function(ctx, f) {
+                ctx.imageSmoothingEnabled = false;
+                ctx.clearRect(0, 0, 16, 16);
+                var w = Math.sin(f * 0.15) * 1.5;
+                var b = Math.abs(w) * 0.5;
+                ctx.save();
+                ctx.translate(0, b);
+                ctx.fillStyle = 'rgba(0,0,0,.3)';
+                ctx.fillRect(5, 14, 6, 1);
+                ctx.fillStyle = this.g.pn;
+                ctx.fillRect(5, 12, 2, 3 + w);
+                ctx.fillRect(9, 12, 2, 3 - w);
+                ctx.fillStyle = this.g.sh;
+                ctx.fillRect(4, 7, 8, 6);
+                ctx.fillStyle = this.g.sk;
+                ctx.fillRect(5, 2, 6, 6);
+                ctx.fillStyle = this.g.hr;
+                ctx.fillRect(5, 1, 6, 2);
+                ctx.fillRect(4, 2, 1, 2);
+                ctx.fillRect(11, 2, 1, 2);
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(6, 4, 2, 2);
+                ctx.fillRect(9, 4, 2, 2);
+                ctx.fillStyle = '#000';
+                ctx.fillRect(7, 5, 1, 1);
+                ctx.fillRect(10, 5, 1, 1);
+                ctx.restore();
+            };
         }
-
-        async function fetchAgents() {
-            try {
-                const res = await fetch(`${CONFIG.starOfficeUrl}/agents`);
-                return await res.json();
-            } catch { return []; }
-        }
-
-        function createAgentElement(data) {
-            const cfg = CONFIG.agents[data.name] || { emoji: '🤖', color: '#888', colorDark: '#666', role: 'Agent', type: 'worker' };
-            const isWork = data.state && data.state !== 'idle';
-            const isThink = data.state === 'researching';
-            const isErr = data.state === 'error';
-            const el = document.createElement('div');
-            el.className = `agent ${isWork?'working':'idle'} ${isThink?'thinking':''} ${isErr?'error':''}`;
-            el.style.setProperty('--agent-color', cfg.color);
-            el.style.setProperty('--agent-color-dark', cfg.colorDark);
-            el.innerHTML = `<div class="agent-sprite">${cfg.emoji}<div class="agent-light ${isWork?'active':''}"></div></div><div class="agent-name">${data.name}</div><div class="agent-status ${data.state||'idle'}">${data.state||'idle'}</div>`;
-            el.onmouseenter = e => showTooltip(e, data, cfg);
-            el.onmouseleave = hideTooltip;
+        
+        function mkAgent(d) {
+            var g = CFG.agents[d.name] || CFG.agents['Coding Agent'];
+            var el = document.createElement('div');
+            el.className = 'ag';
+            el.id = 'agent-' + d.name.replace(/\s+/g, '-').toLowerCase();
+            
+            var cv = document.createElement('canvas');
+            cv.width = 16;
+            cv.height = 16;
+            el.appendChild(cv);
+            
+            var nm = document.createElement('div');
+            nm.className = 'an';
+            nm.textContent = d.name;
+            el.appendChild(nm);
+            
+            var st = document.createElement('div');
+            st.className = 'as ' + (d.state || 'idle');
+            st.textContent = d.state || 'idle';
+            el.appendChild(st);
+            
+            var ch = new PixelChar(g);
+            var f = 0;
+            el._r = false;
+            el._start = function() {
+                if (!el._r) {
+                    el._r = true;
+                    var lp = function() {
+                        ch.draw(cv.getContext('2d'), f++);
+                        el._id = requestAnimationFrame(lp);
+                    };
+                    lp();
+                }
+            };
+            el._stop = function() {
+                el._r = false;
+                if (el._id) cancelAnimationFrame(el._id);
+            };
+            el._start();
+            
+            el.onmouseenter = function(e) {
+                var t = document.getElementById('tip');
+                t.querySelector('.tt').textContent = d.name;
+                t.querySelector('.td').innerHTML = '<strong>Role:</strong> ' + g.r + '<br><strong>Status:</strong> ' + (d.state || 'idle') + '<br><strong>Task:</strong> ' + (d.detail || 'None');
+                t.style.left = Math.min(e.pageX + 15, innerWidth - 280) + 'px';
+                t.style.top = Math.min(e.pageY + 15, innerHeight - 120) + 'px';
+                t.classList.add('v');
+            };
+            el.onmouseleave = function() {
+                document.getElementById('tip').classList.remove('v');
+            };
+            
             return el;
         }
-
-        function showTooltip(e, data, cfg) {
-            const t = document.getElementById('tooltip');
-            t.querySelector('.title').textContent = `${cfg.emoji} ${data.name}`;
-            t.querySelector('.detail').innerHTML = `<strong>Role:</strong> ${cfg.role}<br><strong>Status:</strong> ${data.state||'idle'}<br><strong>Task:</strong> ${data.detail||'No active task'}<br><strong>Area:</strong> ${data.area||'unknown'}`;
-            t.style.left = Math.min(e.pageX+15, innerWidth-300)+'px';
-            t.style.top = Math.min(e.pageY+15, innerHeight-150)+'px';
-            t.classList.add('visible');
+        
+        function mv(el, z) {
+            var t = ZP[z];
+            if (!t) return;
+            var cur = parseFloat(el.style.left) || 50;
+            if (Math.abs(t.x - cur) > 3) {
+                lg(el.querySelector('.an').textContent, '→ ' + z);
+            }
+            el.style.left = t.x + '%';
+            el.style.top = t.y + '%';
         }
-
-        function hideTooltip() { document.getElementById('tooltip').classList.remove('visible'); }
-
-        function clearZone(id) { document.getElementById(`${id}-content`).innerHTML = ''; }
-        function addAgent(id, el) {
-            const c = document.getElementById(`${id}-content`);
-            const e = c.querySelector('.empty-zone');
-            if (e) e.remove();
-            c.appendChild(el);
+        
+        function render(ag) {
+            if (!ag || !Array.isArray(ag)) return;
+            
+            var ly = document.getElementById('layer');
+            var i, a, g, z, tg, id, el;
+            
+            for (i = 0; i < ag.length; i++) {
+                a = ag[i];
+                if (!a || !a.name) continue;
+                
+                g = CFG.agents[a.name];
+                z = ZM[a.state] || 'rest';
+                tg = (g && g.t === 'orch') ? 'orch' : z;
+                id = 'agent-' + a.name.replace(/\s+/g, '-').toLowerCase();
+                
+                el = document.getElementById(id);
+                if (!el) {
+                    el = mkAgent(a);
+                    el.style.left = '50%';
+                    el.style.top = '50%';
+                    ly.appendChild(el);
+                    (function(e, t) {
+                        setTimeout(function() { mv(e, t); }, 100);
+                    })(el, tg);
+                } else {
+                    el.querySelector('.as').textContent = a.state || 'idle';
+                    el.querySelector('.as').className = 'as ' + (a.state || 'idle');
+                    var cz = S.pos[a.name];
+                    if (cz !== tg) {
+                        mv(el, tg);
+                        S.pos[a.name] = tg;
+                    }
+                }
+            }
+            
+            var ids = [];
+            for (i = 0; i < ag.length; i++) {
+                if (ag[i] && ag[i].name) {
+                    ids.push('agent-' + ag[i].name.replace(/\s+/g, '-').toLowerCase());
+                }
+            }
+            
+            var els = ly.querySelectorAll('.ag');
+            for (i = 0; i < els.length; i++) {
+                el = els[i];
+                if (ids.indexOf(el.id) === -1) {
+                    el._stop();
+                    el.style.opacity = '0';
+                    (function(e) {
+                        setTimeout(function() { e.remove(); }, 500);
+                    })(el);
+                }
+            }
         }
-
-        function renderAgents(agents) {
-            ['work','rest','meeting','error','orchestrator'].forEach(clearZone);
-            agents.forEach(a => {
-                const cfg = CONFIG.agents[a.name];
-                const zone = zoneMapping[a.state] || 'rest';
-                const el = createAgentElement(a);
-                (cfg && cfg.type === 'orchestrator' ? addAgent('orchestrator', el) : addAgent(zone, el));
-            });
-            const empty = { work:'Agents working...', rest:'Idle agents...', meeting:'Collaborating...', error:'No errors!', orchestrator:'Orchestrator offline' };
-            ['work','rest','meeting','error','orchestrator'].forEach(z => {
-                const c = document.getElementById(`${z}-content`);
-                if (!c.children.length) c.innerHTML = `<div class="empty-zone">${empty[z]}</div>`;
-            });
+        
+        function stats(ag) {
+            var safe = ag || [];
+            var active = 0, idle = 0, i;
+            for (i = 0; i < safe.length; i++) {
+                if (safe[i] && safe[i].state && safe[i].state !== 'idle') {
+                    active++;
+                } else {
+                    idle++;
+                }
+            }
+            document.getElementById('sa').textContent = active;
+            document.getElementById('si').textContent = idle;
+            document.getElementById('st').textContent = '0';
+            document.getElementById('sd').textContent = '0';
         }
-
-        function updateStats(agents) {
-            document.getElementById('stat-active').textContent = agents.filter(a => a.state && a.state !== 'idle').length;
-            document.getElementById('stat-idle').textContent = agents.filter(a => !a.state || a.state === 'idle').length;
-            document.getElementById('stat-tasks').textContent = state.tasks.length;
-            document.getElementById('stat-completed').textContent = state.completedTasks;
+        
+        function lg(n, m) {
+            var l = document.getElementById('log');
+            var el = document.createElement('div');
+            el.className = 'li';
+            el.innerHTML = '<span class="tm">' + new Date().toLocaleTimeString() + '</span><span>' + n + '</span><span>' + m + '</span>';
+            l.insertBefore(el, l.firstChild);
+            while (l.children.length > 4) {
+                l.removeChild(l.lastChild);
+            }
         }
-
-        function updateTs() { document.getElementById('last-update').textContent = `LIVE ${new Date().toLocaleTimeString()}`; }
-        function addLog(emoji, msg) {
-            const log = document.getElementById('activity-log');
-            const el = document.createElement('div');
-            el.className = 'log-item';
-            el.innerHTML = `<span class="time">${new Date().toLocaleTimeString()}</span><span class="agent-emoji">${emoji}</span><span>${msg}</span>`;
-            log.insertBefore(el, log.firstChild);
-            while (log.children.length > 5) log.removeChild(log.lastChild);
+        
+        function up() {
+            document.getElementById('ts').textContent = 'LIVE ' + new Date().toLocaleTimeString();
         }
-
-        async function update() {
-            const agents = await fetchAgents();
-            state.agents = agents;
-            renderAgents(agents);
-            updateStats(agents);
-            updateTs();
+        
+        function fetch() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', CFG.url + '/agents', true);
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    try {
+                        var ag = JSON.parse(xhr.responseText);
+                        S.agents = ag;
+                        render(ag);
+                        stats(ag);
+                        up();
+                        document.getElementById('ld').classList.remove('err');
+                    } catch (e) {
+                        console.error('Parse error:', e);
+                        stats([]);
+                    }
+                } else {
+                    stats([]);
+                    document.getElementById('ld').classList.add('err');
+                }
+            };
+            xhr.onerror = function() {
+                stats([]);
+                document.getElementById('ld').classList.add('err');
+            };
+            xhr.send();
         }
-
+        
         function init() {
-            createStars();
-            createParticles();
-            update();
-            setInterval(update, CONFIG.refreshInterval);
-            addLog('🎮', 'System initialized');
+            mkBg();
+            fetch();
+            setInterval(fetch, 2000);
+            lg('🎮', 'Colony initialized');
         }
-
+        
         init();
     </script>
 </body>
